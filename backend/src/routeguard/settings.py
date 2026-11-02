@@ -37,7 +37,9 @@ if not SECRET_KEY:
     SECRET_KEY = "insecure-local-development-key"
 
 ALLOWED_HOSTS = _env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver")
-CORS_ALLOWED_ORIGINS = _env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+CORS_ALLOWED_ORIGINS = _env_list(
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+)
 CORS_ALLOW_METHODS = ["GET", "POST", "OPTIONS"]
 CORS_PREFLIGHT_MAX_AGE = 86400
 
@@ -46,6 +48,21 @@ INSTALLED_APPS = ["corsheaders"]
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+# Cloudflare terminates TLS and only serves workers.dev over HTTPS.
+SECURE_HSTS_SECONDS = 0 if DEBUG else 31_536_000
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SILENCED_SYSTEM_CHECKS = [
+    # No cookies, sessions or auth: the API is stateless JSON, so there is nothing for
+    # CSRF protection to defend.
+    "security.W003",
+    # Redirecting HTTP to HTTPS is done by Cloudflare, not by Django behind the proxy.
+    "security.W008",
+    # includeSubDomains / preload only make sense on a domain we own; workers.dev is shared.
+    "security.W005",
+    "security.W021",
 ]
 
 ROOT_URLCONF = "routeguard.urls"

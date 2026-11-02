@@ -9,6 +9,7 @@ from domain.risk import (
     classify_rain,
     classify_snow,
     classify_wind,
+    level_for,
 )
 
 L, M, H, S, NT = (
@@ -133,3 +134,15 @@ class TestAssess:
 
     def test_gusts_do_not_affect_classification(self):
         assert assess(WeatherSample(wind_mph=10, gust_mph=70), 10_000).level == L
+
+
+def test_low_risk_has_no_drivers():
+    assert assess(WeatherSample(wind_mph=3, rain_in_hr=0, snow_in_hr=0), 10_000).drivers == ()
+
+
+def test_level_for_matches_assess_and_is_memoised():
+    level_for.cache_clear()
+    for wind, load in [(47.0, 35_000), (47.0, 20_000), (10.0, 80_000), (None, 10_000)]:
+        assert level_for(wind, 0.0, 0.0, load) == assess(WeatherSample(wind, 0.0, 0.0), load).level
+    level_for(47.0, 0.0, 0.0, 35_000)
+    assert level_for.cache_info().hits >= 1

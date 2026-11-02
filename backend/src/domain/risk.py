@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from functools import lru_cache
 
 from .models import RiskLevel, WeatherSample
 
@@ -116,7 +117,8 @@ def assess(weather: WeatherSample | None, load_lb: float) -> RiskAssessment:
         return RiskAssessment(None, None, None, None, (), None)
 
     overall = max(known.values())
-    drivers = tuple(name for name, level in known.items() if level == overall)
+    # At Low nothing is driving risk, so there is nothing to attribute.
+    drivers = tuple(name for name, level in known.items() if level == overall and overall > L)
     return RiskAssessment(
         level=overall,
         wind=wind,
@@ -125,3 +127,12 @@ def assess(weather: WeatherSample | None, load_lb: float) -> RiskAssessment:
         drivers=drivers,
         load_rule=load_rule if wind == overall else None,
     )
+
+
+@lru_cache(maxsize=65_536)
+def level_for(
+    wind_mph: float | None, rain_in_hr: float | None, snow_in_hr: float | None, load_lb: float
+) -> RiskLevel | None:
+    """Overall level only, memoised. Forecast values repeat heavily (calm hours), so this
+    keeps classifying a 49-hour timeline for hundreds of checkpoints cheap."""
+    return assess(WeatherSample(wind_mph, rain_in_hr, snow_in_hr), load_lb).level
