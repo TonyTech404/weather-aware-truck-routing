@@ -10,6 +10,6 @@
 	"routes": [{ "pattern": "routeguard-api.buildwithanthony.com", "custom_domain": true }],
 	"vars": {
 		"DJANGO_ALLOWED_HOSTS": "routeguard-api.buildwithanthony.com",
-		"CORS_ALLOWED_ORIGINS": "https://routeguard.buildwithanthony.com"
+		"CORS_ALLOWED_ORIGINS": "https://routeguard.buildwithanthony.com,https://www.routeguard.buildwithanthony.com"
 	}
 }

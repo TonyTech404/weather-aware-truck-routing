@@ -6,6 +6,9 @@
 		"directory": "./dist",
 		"not_found_handling": "single-page-application"
 	},
-	"routes": [{ "pattern": "routeguard.buildwithanthony.com", "custom_domain": true }],
+	"routes": [
+		{ "pattern": "routeguard.buildwithanthony.com", "custom_domain": true },
+		{ "pattern": "www.routeguard.buildwithanthony.com", "custom_domain": true }
+	],
 	"observability": { "enabled": true }
 }
