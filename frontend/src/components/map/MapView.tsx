@@ -49,7 +49,8 @@ function installLayers(map: MapLibreMap, intervalMi: number) {
     source: 'heat',
     paint: {
       'heatmap-weight': ['get', 'w'],
-      'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 3, 0.7, 9, 1.1],
+      // MapLibre's kernel peaks at ~0.4 per unit weight, so intensity restores the ramp's range.
+      'heatmap-intensity': 1.9,
       'heatmap-radius': heatRadius(intervalMi),
       'heatmap-color': HEAT_COLOR,
       'heatmap-opacity': 0.85,
@@ -216,7 +217,11 @@ export default function MapView({
     if (import.meta.env.MODE !== 'production') {
       ;(window as unknown as Record<string, unknown>).__routeguard = {
         map,
-        sourceFeatures: (id: string) => ((map.getSource(id) as GeoJSONSource | undefined) as unknown as { _data?: AnyCollection })?._data?.features ?? [],
+        sourceFeatures: (id: string) => {
+          const source = map.getSource(id) as GeoJSONSource | undefined
+          const data = source?.serialize().data as AnyCollection | undefined
+          return data?.features ?? []
+        },
       }
     }
 

@@ -14,7 +14,8 @@ const METERS_PER_PIXEL_AT_Z0 = 156543.03 * Math.cos((38 * Math.PI) / 180)
 
 /** Heatmap kernel radius in pixels so neighbouring checkpoints blend into one corridor. */
 export function heatRadius(intervalMi: number): ExpressionSpecification {
-  const radiusMeters = intervalMi * 1609.34 * 0.75
+  // Kernel radius ~1.6x the spacing: neighbours overlap into a continuous corridor.
+  const radiusMeters = intervalMi * 1609.34 * 1.6
   const stops = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12].flatMap((zoom) => [
     zoom,
     Math.min(220, Math.max(8, radiusMeters / (METERS_PER_PIXEL_AT_Z0 / 2 ** zoom))),
