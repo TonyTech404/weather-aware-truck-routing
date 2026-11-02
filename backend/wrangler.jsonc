@@ -5,6 +5,8 @@
 	"compatibility_date": "2026-07-29",
 	"compatibility_flags": ["python_workers"],
 	"observability": { "enabled": true },
+	// Python on Pyodide needs more than the default CPU budget for long trips (Workers Paid).
+	"limits": { "cpu_ms": 30000 },
 	"routes": [{ "pattern": "routeguard-api.buildwithanthony.com", "custom_domain": true }],
 	"vars": {
 		"DJANGO_ALLOWED_HOSTS": "routeguard-api.buildwithanthony.com",

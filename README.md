@@ -178,11 +178,11 @@ without it when `DEBUG` is off. The frontend is built with `VITE_API_BASE_URL` p
   sampling reduces that. Departures are limited to 14 days; ETAs past the 15-day horizon are unscored.
 * The vehicle is assumed (tractor-trailer, 33,000 lb tare); height/weight restrictions come from OSM data.
 * Durations of the car-profile fallback are optimistic for trucks.
-* **Cloudflare Workers Free plan CPU budget.** Python Workers run on Pyodide, which is slow at tight loops, and the Free plan
-  cannot raise the CPU limit. Roughly 1 in 10 to 15 analyses in live testing hit the limit (Cloudflare error 1102, no JSON
-  body). The app mitigates it (routing and forecast caches, de-duplication before decoding geometry, array-based timelines,
-  compact JSON, and one automatic client retry with a "busy" message), but does not eliminate it. Moving `routeguard-api`
-  to a Workers Paid plan (`limits.cpu_ms`) removes the ceiling; this was not done because it is a paid change.
+* **Python Workers CPU budget.** Python runs on Pyodide, which is slow at tight loops, and a long trip costs 0.3-1.5 s of CPU.
+  On the Workers Free plan roughly 1 in 12 analyses exceeded the CPU cap (Cloudflare error 1102). `routeguard-api` therefore
+  runs on **Workers Paid** with `limits.cpu_ms = 30000`; after that change 12 of 12 live analyses at the default interval
+  succeeded. The caching, de-duplication and client retry described in the architecture notes remain as defence in depth.
+  Running this repo on the Free plan will reproduce the occasional failure.
 * The free Open-Meteo tier rate-limits per IP (a 10-mile analysis of a long trip uses several hundred locations);
   the API reports it as `weather_rate_limited` and the UI offers a retry.
 * This is decision support, not dispatch authority. No traffic, closures or incidents are considered.
