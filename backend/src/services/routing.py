@@ -40,6 +40,7 @@ VALHALLA_MAX_STRAIGHT_MI = 850  # leaves room for the detour legs through corrid
 MAX_ROUTES = 3
 MAX_DETOUR_RATIO = 1.35  # drop candidates slower than 1.35x the fastest
 DUPLICATE_OVERLAP = 0.9
+BACKTRACK_GAP_MI = 15.0  # revisiting a spot after this much road means a spur or loop
 SHAPE_SPACING_MI = 0.25  # thin dense provider geometry before per-vertex work
 CORRIDOR_OFFSET_FRACTION = 0.12
 
@@ -173,11 +174,26 @@ def overlap(a: set, b: set) -> float:
     return len(a & b) / smaller if smaller else 0.0
 
 
+def has_backtrack(route: Route) -> bool:
+    """True if the road returns to a place it already passed, 15+ miles later.
+
+    Routes forced through a corridor waypoint can run out to a snapped point and come
+    straight back; that is a detour to the waypoint, not a real alternative.
+    """
+    first_seen: dict[tuple[int, int], float] = {}
+    for point, mile in zip(route.shape, route.cum_dist_mi, strict=True):
+        cell = (round(point.lat * 50), round(point.lon * 50))  # ~1.4 mi cells
+        earlier = first_seen.setdefault(cell, mile)
+        if mile - earlier > BACKTRACK_GAP_MI:
+            return True
+    return False
+
+
 def select_routes(candidates: list[Route]) -> list[Route]:
     """Keep up to three distinct, plausible routes, fastest first."""
-    if not candidates:
+    ordered = sorted((r for r in candidates if not has_backtrack(r)), key=lambda r: r.duration_s)
+    if not ordered:
         return []
-    ordered = sorted(candidates, key=lambda r: r.duration_s)
     fastest = ordered[0].duration_s
     kept: list[Route] = []
     kept_cells: list[set] = []

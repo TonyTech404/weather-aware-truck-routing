@@ -115,7 +115,7 @@ class TestAnalyzeTrip:
         assert result.recommendation.status == "recommended"
         winner = next(a for a in result.routes if a.route.id == result.recommendation.route_id)
         assert winner.stats.no_travel_mi == 0
-        assert any("excluded" in reason for reason in result.reasons)
+        assert any(reason.startswith("Excluded") for reason in result.reasons)
 
     async def test_all_routes_blocked_is_reported_honestly(self):
         http = FakeHttp(valhalla=two_routes(), weather=lambda *a: (60.0, 70.0, 0, 0, 0))

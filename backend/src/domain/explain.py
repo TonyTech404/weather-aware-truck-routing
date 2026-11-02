@@ -70,10 +70,11 @@ def explain(
             f"({_value(key, best)} vs {_value(key, runner_up)} on {runner_label})."
         ]
 
-    reasons += [
-        f"{labels[r.route_id]} is excluded: it crosses "
-        f"{format_miles(stats[r.route_id].no_travel_mi)} of No Travel conditions."
+    excluded = [
+        f"{labels[r.route_id]} ({format_miles(stats[r.route_id].no_travel_mi)})"
         for r in recommendation.rankings
         if r.prohibited
     ]
+    if excluded:
+        reasons.append("Excluded for crossing No Travel conditions: " + ", ".join(excluded) + ".")
     return reasons

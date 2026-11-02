@@ -7,6 +7,7 @@ from services.routing import (
     NoRouteError,
     corridor_waypoints,
     fetch_routes,
+    has_backtrack,
     overlap,
     parse_osrm_route,
     parse_valhalla_trip,
@@ -152,3 +153,31 @@ class TestFetchRoutes:
         http = FakeHttp(valhalla=err, osrm=err)
         with pytest.raises(UpstreamError):
             await fetch_routes(http, ORIGIN, DEST, load_lb=10_000)
+
+
+class TestBacktracking:
+    def test_straight_route_is_fine(self):
+        route = parse_valhalla_trip(valhalla_trip(straight_shape(lat0=32, lat1=34), 2, 138))
+        assert not has_backtrack(route)
+
+    def test_spur_that_returns_along_the_same_road_is_rejected(self):
+        out = straight_shape(lat0=32.0, lat1=33.0, steps=200)
+        spur = [LatLon(33.0 + i * 0.003, -97.0) for i in range(1, 100)]  # ~20 mi out
+        shape = (
+            out + spur + list(reversed(spur)) + [LatLon(33.0, -97.0)] + straight_shape(33.0, 34.0)
+        )
+        route = parse_valhalla_trip(valhalla_trip(shape, 4, 220))
+        assert has_backtrack(route)
+
+    def test_short_wiggles_are_tolerated(self):
+        shape = straight_shape(steps=200)
+        wiggle = shape[:100] + [LatLon(p.lat, p.lon + 0.01) for p in shape[95:100]] + shape[100:]
+        assert not has_backtrack(parse_valhalla_trip(valhalla_trip(wiggle, 1, 69)))
+
+    def test_select_routes_drops_backtracking_candidates(self):
+        out = straight_shape(lat0=32.0, lat1=33.0, steps=200)
+        spur = [LatLon(33.0 + i * 0.003, -97.0) for i in range(1, 100)]
+        bad = parse_valhalla_trip(valhalla_trip(out + spur + list(reversed(spur)), 1.0, 130))
+        good = parse_valhalla_trip(valhalla_trip(straight_shape(lon=-96.0), 1.1, 70))
+        routes = select_routes([bad, good])
+        assert len(routes) == 1 and routes[0].duration_s == good.duration_s
