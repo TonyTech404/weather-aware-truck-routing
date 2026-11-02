@@ -9,8 +9,9 @@ risk rules, and recommends a route, with its reasoning shown.
 
 * **Live app:** https://routeguard.buildwithanthony.com
 * **API:** https://routeguard-api.buildwithanthony.com (`/api/health`)
-* **Walkthrough video (about 7.5 min):** [watch or download](https://github.com/TonyTech404/weather-aware-truck-routing/releases/tag/v1.0.0)
 * Built for the Spotter AI full-stack assessment (React + Django).
+
+[![RouteGuard walkthrough video, about 7.5 minutes: click to watch](docs/screenshots/walkthrough-thumb.jpg)](https://github.com/TonyTech404/weather-aware-truck-routing/releases/tag/v1.0.0)
 
 ![RouteGuard showing Chicago to Denver with a rain-driven Severe checkpoint, the forecast heatmap and timeline](docs/screenshots/heatmap-timeline.png)
 
