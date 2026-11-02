@@ -106,6 +106,15 @@ async def gather_with_grace(coroutines, grace_s: float = STRAGGLER_GRACE_S) -> l
 # --------------------------------------------------------------------------- parsing
 
 
+def _valhalla_key(trip: dict) -> tuple:
+    return round(trip["summary"]["length"], 1), round(trip["summary"]["time"])
+
+
+def _distinct(results: list, key) -> list:
+    """Unique raw routes across all provider calls (failed calls are skipped)."""
+    return _unique((item for result in results if isinstance(result, list) for item in result), key)
+
+
 def _unique(items, key):
     """Drop provider routes with identical (length, time) before the costly decode."""
     seen: dict = {}
@@ -310,13 +319,15 @@ async def _valhalla_candidates(http, origin, destination, load_lb) -> list[Route
         )
         return [payload["trip"], *(alt["trip"] for alt in payload.get("alternates", []))]
 
-    requests = [one(options, alts) for options, alts in VALHALLA_PROFILES]
-    requests += [one({}, 0, via) for via in corridor_waypoints(origin, destination)]
-    results = await gather_with_grace(requests)
-    trips = _unique(
-        (trip for result in results if isinstance(result, list) for trip in result),
-        lambda trip: (round(trip["summary"]["length"], 1), round(trip["summary"]["time"])),
-    )
+    # Corridor-waypoint routes are the most expensive candidates to process, so they are only
+    # requested when the engine's own alternatives and the shortest route leave fewer than three.
+    results = await gather_with_grace([one(options, alts) for options, alts in VALHALLA_PROFILES])
+    if len(_distinct(results, _valhalla_key)) < MAX_ROUTES:
+        extra = await gather_with_grace(
+            [one({}, 0, via) for via in corridor_waypoints(origin, destination)]
+        )
+        results = [*results, *extra]
+    trips = _distinct(results, _valhalla_key)
     if trips:
         return [parse_valhalla_trip(trip) for trip in trips]
     errors = [r for r in results if isinstance(r, Exception)]

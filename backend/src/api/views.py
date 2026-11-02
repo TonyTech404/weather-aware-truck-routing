@@ -94,7 +94,7 @@ async def analyze(request):
     except UpstreamError as exc:
         logger.warning("upstream failure during analysis: %s", exc)
         return upstream_response(exc)
-    return JsonResponse(serialize_analysis(analysis))
+    return JsonResponse(serialize_analysis(analysis), json_dumps_params={"separators": (",", ":")})
 
 
 def server_error(request):

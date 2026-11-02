@@ -83,22 +83,27 @@ def encode_polyline(points: Sequence[LatLon], precision: int = 6) -> str:
 
 
 def decode_polyline(encoded: str, precision: int = 6) -> list[LatLon]:
+    """Decode a polyline. This runs over ~15,000 vertices per long route, so the inner loop
+    reads raw bytes and keeps everything in locals; it is a hot spot on Pyodide."""
     factor = 10**precision
+    data = encoded.encode("ascii")
     points: list[LatLon] = []
-    index = lat = lon = 0
-    while index < len(encoded):
-        deltas = []
-        for _ in range(2):
-            shift = result = 0
-            while True:
-                byte = ord(encoded[index]) - 63
-                index += 1
-                result |= (byte & 0x1F) << shift
-                shift += 5
-                if byte < 0x20:
-                    break
-            deltas.append(~(result >> 1) if result & 1 else result >> 1)
-        lat += deltas[0]
-        lon += deltas[1]
-        points.append(LatLon(lat / factor, lon / factor))
+    append = points.append
+    lat = lon = result = shift = 0
+    axis = 0
+    for byte in data:
+        byte -= 63
+        result |= (byte & 0x1F) << shift
+        if byte >= 0x20:
+            shift += 5
+            continue
+        delta = ~(result >> 1) if result & 1 else result >> 1
+        result = shift = 0
+        if axis == 0:
+            lat += delta
+            axis = 1
+        else:
+            lon += delta
+            axis = 0
+            append(LatLon(lat / factor, lon / factor))
     return points

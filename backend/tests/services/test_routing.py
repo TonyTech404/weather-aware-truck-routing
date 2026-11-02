@@ -246,3 +246,32 @@ class TestGatherWithGrace:
 
         results = await gather_with_grace([slow_fail(), slow_fail()], grace_s=0.01)
         assert all(isinstance(r, ValueError) for r in results)
+
+
+class TestCandidatePhases:
+    @staticmethod
+    def three_corridors():
+        return [valhalla_trip(straight_shape(lon=-97.0 + i), 1.0 + i * 0.05, 70) for i in range(3)]
+
+    async def test_corridor_waypoints_are_skipped_when_three_routes_already_exist(self):
+        http = FakeHttp(valhalla=self.three_corridors())
+        result = await fetch_routes(http, ORIGIN, DEST, load_lb=10_000)
+        assert len(result.routes) == 3
+        valhalla_calls = [c for c in http.calls if c[1].startswith("https://valhalla")]
+        assert len(valhalla_calls) == 2  # default (+alternates) and shortest
+        assert not any(
+            loc.get("type") == "through" for c in valhalla_calls for loc in c[3]["locations"]
+        )
+
+    async def test_corridor_waypoints_are_requested_when_fewer_than_three_exist(self):
+        http = FakeHttp(valhalla=[valhalla_trip(straight_shape(), 1.0, 70)])
+        await fetch_routes(http, ORIGIN, DEST, load_lb=10_000)
+        valhalla_calls = [c for c in http.calls if c[1].startswith("https://valhalla")]
+        assert len(valhalla_calls) == 4
+        assert (
+            sum(
+                any(loc.get("type") == "through" for loc in c[3]["locations"])
+                for c in valhalla_calls
+            )
+            == 2
+        )
