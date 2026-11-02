@@ -1,0 +1,12 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "routeguard-api",
+	"main": "src/entry.py",
+	"compatibility_date": "2026-07-29",
+	"compatibility_flags": ["python_workers"],
+	"observability": { "enabled": true },
+	"vars": {
+		"DJANGO_ALLOWED_HOSTS": "routeguard-api.hernandezmarkanthony61.workers.dev",
+		"CORS_ALLOWED_ORIGINS": "https://routeguard-web.hernandezmarkanthony61.workers.dev"
+	}
+}

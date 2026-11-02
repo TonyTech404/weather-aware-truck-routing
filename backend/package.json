@@ -1,0 +1,11 @@
+{
+	"name": "routeguard-api",
+	"private": true,
+	"scripts": {
+		"dev": "uv run pywrangler dev",
+		"deploy": "uv run pywrangler deploy"
+	},
+	"devDependencies": {
+		"wrangler": "^4.129.0"
+	}
+}
