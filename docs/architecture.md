@@ -84,13 +84,19 @@ provider geometry is thinned (0.25 mi) with a flat-earth distance before the tri
 tight Python loops. Risk classification of the 49-hour timelines is memoised. The frontend lazy-loads MapLibre, identical
 requests are de-duplicated and stale ones aborted, and map layers update through `setData` on memoised GeoJSON.
 
+**Runtime budget.** Pyodide on the Workers Free plan has a hard CPU ceiling that live testing showed is reachable on heavy
+trips. Measures taken: routing results cached 15 min (re-analysis with a new load/departure/interval does no routing work),
+provider routes de-duplicated by length and time before geometry is decoded, corridor-waypoint candidates requested only when
+needed, a byte-level polyline decoder, 49-hour timelines built with slices (tested equivalent to per-hour sampling), compact
+JSON, straggler calls abandoned 5 s after the first success, and a client retry for platform 5xx. See README for the residual risk.
+
 ## Testing strategy
 
-* **Backend (209 tests):** thresholds and exact boundary values, load rules, missing data, interval generation,
+* **Backend (230 tests):** thresholds and exact boundary values, load rules, missing data, interval generation,
   interpolation along bent roads, ETA from the time profile, distance-weighted mileage, ranking order and float noise,
   routing selection/dedup/backtracking, forecast parsing/windowing/caching/horizon, timezone/DST, and the HTTP API with a
   fake upstream. No test touches the network.
-* **Frontend (83 tests):** validation, form behaviour, combobox keyboard handling, route selection, risk summaries,
+* **Frontend (86 tests):** validation, form behaviour, combobox keyboard handling, route selection, risk summaries,
   forecast controls, inspector, loading/error states, reducer and map-data derivation, API client and hook behaviour.
 * **E2E (20 Playwright tests):** real browser, production build, real Django API, scripted fake weather. Asserts what
   MapLibre actually draws, load-weight escalation, slider/keyboard/playback, errors, and a phone viewport.

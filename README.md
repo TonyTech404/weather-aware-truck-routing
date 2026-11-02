@@ -140,9 +140,9 @@ and ETAs always use the truck's actual arrival time.
 
 ## Testing
 
-* **209 backend tests** (pytest): thresholds and exact boundaries, load rules, missing data, interval generation,
+* **230 backend tests** (pytest): thresholds and exact boundaries, load rules, missing data, interval generation,
   interpolation on bent roads, ETAs, mileage, ranking, routing selection, forecast parsing/caching/horizon, DST, the HTTP API.
-* **83 frontend tests** (Vitest + Testing Library): forms, validation, combobox keyboard use, route selection, risk summaries,
+* **86 frontend tests** (Vitest + Testing Library): forms, validation, combobox keyboard use, route selection, risk summaries,
   forecast controls, loading/error states, state and map-data derivation.
 * **20 Playwright tests** in a real browser against the production build and the real Django API with scripted fake weather
   (deterministic): planning, route switching, checkpoint inspection from list *and* map, the slider/keyboard/playback, layer
@@ -178,6 +178,13 @@ without it when `DEBUG` is off. The frontend is built with `VITE_API_BASE_URL` p
   sampling reduces that. Departures are limited to 14 days; ETAs past the 15-day horizon are unscored.
 * The vehicle is assumed (tractor-trailer, 33,000 lb tare); height/weight restrictions come from OSM data.
 * Durations of the car-profile fallback are optimistic for trucks.
+* **Cloudflare Workers Free plan CPU budget.** Python Workers run on Pyodide, which is slow at tight loops, and the Free plan
+  cannot raise the CPU limit. Roughly 1 in 10 to 15 analyses in live testing hit the limit (Cloudflare error 1102, no JSON
+  body). The app mitigates it (routing and forecast caches, de-duplication before decoding geometry, array-based timelines,
+  compact JSON, and one automatic client retry with a "busy" message), but does not eliminate it. Moving `routeguard-api`
+  to a Workers Paid plan (`limits.cpu_ms`) removes the ceiling; this was not done because it is a paid change.
+* The free Open-Meteo tier rate-limits per IP (a 10-mile analysis of a long trip uses several hundred locations);
+  the API reports it as `weather_rate_limited` and the UI offers a retry.
 * This is decision support, not dispatch authority. No traffic, closures or incidents are considered.
 
 ## Design decisions
