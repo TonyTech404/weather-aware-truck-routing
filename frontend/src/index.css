@@ -1,0 +1,113 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-brand-50: #eaf5f6;
+  --color-brand-100: #cfe6e9;
+  --color-brand-500: #187080;
+  --color-brand-600: #0f5c6b;
+  --color-brand-700: #0b4f5c;
+  --color-brand-800: #083f49;
+
+  --color-canvas: #f5f6f7;
+  --color-surface: #ffffff;
+  --color-line: #e2e5e8;
+  --color-line-strong: #cdd2d7;
+  --color-ink-900: #14191f;
+  --color-ink-700: #38424c;
+  --color-ink-500: #5f6a75;
+  --color-ink-400: #86909a;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+html {
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+/* Forecast slider: a thin track painted with the hourly risk, a round thumb. */
+input[type='range'].timeline {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--track, var(--color-line));
+  border: 1px solid rgb(0 0 0 / 0.08);
+  cursor: pointer;
+}
+input[type='range'].timeline::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--color-brand-700);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+}
+input[type='range'].timeline::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--color-brand-700);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+}
+
+/* Load slider uses a plain neutral track. */
+input[type='range'].plain {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-line-strong);
+  cursor: pointer;
+}
+input[type='range'].plain::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--color-brand-700);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--color-brand-700);
+}
+input[type='range'].plain::-moz-range-thumb {
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background: var(--color-brand-700);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--color-brand-700);
+}
+
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
