@@ -44,7 +44,7 @@ DUPLICATE_OVERLAP = 0.9
 BACKTRACK_GAP_MI = 15.0  # revisiting a spot after this much road means a spur or loop
 SHAPE_SPACING_MI = 0.25  # thin dense provider geometry before per-vertex work
 CORRIDOR_OFFSET_FRACTION = 0.12
-STRAGGLER_GRACE_S = 5.0  # after the first candidate set arrives, wait this long for the rest
+STRAGGLER_GRACE_S = 10.0  # after the first candidate set arrives, wait this long for the rest
 
 # Assumed vehicle: 5-axle tractor-trailer, US legal dimensions.
 TRUCK_TARE_LB = 33_000

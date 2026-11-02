@@ -88,7 +88,7 @@ requests are de-duplicated and stale ones aborted, and map layers update through
 trips, so the API runs on Workers Paid with `limits.cpu_ms = 30000`. Measures that reduce the load regardless: routing results cached 15 min (re-analysis with a new load/departure/interval does no routing work),
 provider routes de-duplicated by length and time before geometry is decoded, corridor-waypoint candidates requested only when
 needed, a byte-level polyline decoder, 49-hour timelines built with slices (tested equivalent to per-hour sampling), compact
-JSON, straggler calls abandoned 5 s after the first success, and a client retry for platform 5xx. Residual risk is the free Open-Meteo rate limit, reported as `weather_rate_limited`.
+JSON, straggler calls abandoned 10 s after the first success, and a client retry for platform 5xx. Residual risk is the free Open-Meteo rate limit, reported as `weather_rate_limited`.
 
 ## Testing strategy
 
