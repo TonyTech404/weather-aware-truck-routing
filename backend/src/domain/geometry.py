@@ -27,19 +27,42 @@ def cumulative_distances_mi(shape: Sequence[LatLon]) -> list[float]:
     return cumulative
 
 
-def thin_shape(shape: Sequence[LatLon], min_spacing_mi: float) -> list[LatLon]:
-    """Drop vertices closer than `min_spacing_mi` to the last kept one (keeps both endpoints).
+def fast_cumulative_mi(shape: Sequence[LatLon]) -> list[float]:
+    """Cheap approximate distance along a DENSE polyline (vertices well under a mile apart).
 
-    Used only to shrink the geometry sent to the browser; checkpoint placement always
-    uses the full-resolution shape.
+    Uses a local flat-earth approximation per segment (one `cos` instead of the full
+    haversine), which is accurate to a fraction of a percent at that spacing. Meant for
+    pre-processing raw provider geometry; checkpoint placement uses `haversine_mi`.
     """
-    if len(shape) <= 2:
-        return list(shape)
-    kept = [shape[0]]
-    for point in shape[1:-1]:
-        if haversine_mi(kept[-1], point) >= min_spacing_mi:
-            kept.append(point)
-    kept.append(shape[-1])
+    miles_per_degree = EARTH_RADIUS_MI * math.pi / 180
+    cumulative = [0.0]
+    for prev, cur in itertools.pairwise(shape):
+        dy = (cur.lat - prev.lat) * miles_per_degree
+        dx = (
+            (cur.lon - prev.lon)
+            * miles_per_degree
+            * math.cos(math.radians((cur.lat + prev.lat) / 2))
+        )
+        cumulative.append(cumulative[-1] + math.hypot(dx, dy))
+    return cumulative
+
+
+def thin_indices(cumulative_mi: Sequence[float], min_spacing_mi: float) -> list[int]:
+    """Indices of vertices at least `min_spacing_mi` apart along the path (endpoints kept).
+
+    Shrinks dense provider geometry before the expensive per-vertex work. Positions and
+    times of kept vertices are unchanged, so the route stays on the real road.
+    """
+    last = len(cumulative_mi) - 1
+    if last < 2:
+        return list(range(last + 1))
+    kept = [0]
+    anchor = cumulative_mi[0]
+    for i in range(1, last):
+        if cumulative_mi[i] - anchor >= min_spacing_mi:
+            kept.append(i)
+            anchor = cumulative_mi[i]
+    kept.append(last)
     return kept
 
 

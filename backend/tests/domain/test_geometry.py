@@ -7,8 +7,9 @@ from domain.geometry import (
     cumulative_distances_mi,
     decode_polyline,
     encode_polyline,
+    fast_cumulative_mi,
     haversine_mi,
-    thin_shape,
+    thin_indices,
 )
 from domain.models import LatLon
 
@@ -44,10 +45,21 @@ def test_polyline_roundtrip_and_reference_value():
     )
 
 
-def test_thin_shape_keeps_endpoints_and_enforces_spacing():
-    shape = [LatLon(0, i * 0.001) for i in range(1001)]  # ~0.069 mi apart
-    thinned = thin_shape(shape, 1.0)
-    assert thinned[0] == shape[0] and thinned[-1] == shape[-1]
-    assert len(thinned) < 100
-    gaps = [haversine_mi(a, b) for a, b in itertools.pairwise(thinned[:-1])]
+def test_fast_cumulative_matches_haversine_on_dense_shapes():
+    shape = [LatLon(32.0 + i * 0.0005, -96.0 + i * 0.0007) for i in range(4000)]
+    fast, exact = fast_cumulative_mi(shape)[-1], cumulative_distances_mi(shape)[-1]
+    assert fast == pytest.approx(exact, rel=2e-3)
+
+
+def test_thin_indices_keeps_endpoints_and_enforces_spacing():
+    cumulative = [i * 0.07 for i in range(1001)]  # vertices ~0.07 mi apart
+    kept = thin_indices(cumulative, 1.0)
+    assert kept[0] == 0 and kept[-1] == 1000
+    assert len(kept) < 100
+    gaps = [cumulative[b] - cumulative[a] for a, b in itertools.pairwise(kept[:-1])]
     assert min(gaps) >= 1.0
+
+
+def test_thin_indices_handles_tiny_inputs():
+    assert thin_indices([0.0], 1.0) == [0]
+    assert thin_indices([0.0, 0.1], 1.0) == [0, 1]
