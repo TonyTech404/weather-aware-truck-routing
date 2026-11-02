@@ -22,12 +22,12 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:4173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    launchOptions: { args: WEBGL_ARGS },
   },
   projects: [
-    { name: 'desktop', testIgnore: [/responsive/, /smoke/, /phone-safari/], use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
-    { name: 'mobile', testMatch: [/responsive/, /phone-safari/], use: { ...devices['Pixel 7'] } },
+    { name: 'desktop', testIgnore: [/responsive/, /smoke/, /phone-safari/], use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, launchOptions: { args: WEBGL_ARGS } } },
+    { name: 'mobile', testMatch: [/responsive/, /phone-safari/], use: { ...devices['Pixel 7'], launchOptions: { args: WEBGL_ARGS } } },
     // WebKit is the engine behind every browser on iPhone; it caught what Chromium emulation missed.
+    // It must not receive the Chromium-only graphics flags above.
     { name: 'mobile-safari', testMatch: /phone-safari/, use: { ...devices['iPhone 14'] } },
   ],
   webServer: [
