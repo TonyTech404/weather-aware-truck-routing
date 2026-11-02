@@ -1,5 +1,8 @@
 import type { Metric } from '@/lib/risk'
 
+/** Phone layout: map and details share the screen, or one of them takes all of it. */
+export type MobileView = 'split' | 'map' | 'panel'
+
 export interface WorkspaceState {
   routeId: string | null
   /** Checkpoint index on the selected route. */

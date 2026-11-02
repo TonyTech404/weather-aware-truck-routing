@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState, type Dispatch, type ReactNode } from 'react'
-import { LoaderCircle } from 'lucide-react'
+import { ChevronUp, LoaderCircle, Maximize2 } from 'lucide-react'
 import { CheckpointInspector } from '@/components/map/CheckpointInspector'
 import { ForecastTimeline } from '@/components/map/ForecastTimeline'
 import { LayerControls } from '@/components/map/LayerControls'
@@ -7,7 +7,7 @@ import { MapLegend } from '@/components/map/MapLegend'
 import type { MapData } from '@/components/map/MapView'
 import { checkpointPoints, heatPoints, prepareRoutes, riskSegments, routeLines, truckPosition } from '@/lib/derive'
 import type { Coord } from '@/lib/geo'
-import type { WorkspaceAction, WorkspaceState } from '@/state/workspace'
+import type { MobileView, WorkspaceAction, WorkspaceState } from '@/state/workspace'
 import type { AnalysisResponse, PlaceRef } from '@/types/api'
 
 const MapView = lazy(() => import('@/components/map/MapView'))
@@ -22,9 +22,11 @@ interface Props {
   compact: boolean
   /** Render the inspector over the map (desktop) instead of in the sidebar (mobile). */
   inspectorOnMap: boolean
+  view: MobileView
+  onView: (view: MobileView) => void
 }
 
-export function MapWorkspace({ data, ws, dispatch, endpoints, intervalMi, busy, compact, inspectorOnMap }: Props) {
+export function MapWorkspace({ data, ws, dispatch, endpoints, intervalMi, busy, compact, inspectorOnMap, view, onView }: Props) {
   const prepared = useMemo(() => (data ? prepareRoutes(data.routes) : []), [data])
   const selected = prepared.find((p) => p.route.id === ws.routeId)
   const selectedCp = selected && ws.checkpoint != null ? selected.route.checkpoints[ws.checkpoint] : undefined
@@ -148,6 +150,18 @@ export function MapWorkspace({ data, ws, dispatch, endpoints, intervalMi, busy, 
             </div>
             <div className="pointer-events-auto w-full max-w-[880px]">{timeline}</div>
           </div>
+        )}
+
+        {compact && data && (
+          <button
+            type="button"
+            onClick={() => onView(view === 'map' ? 'split' : 'map')}
+            aria-label={view === 'map' ? 'Show trip details' : 'Show the full map'}
+            className="absolute right-2 bottom-2 z-10 flex h-[44px] items-center gap-1.5 rounded-full border border-line-strong bg-surface px-4 text-sm font-semibold text-brand-700 shadow-md active:bg-brand-50"
+          >
+            {view === 'map' ? <ChevronUp className="size-[18px]" aria-hidden /> : <Maximize2 className="size-4" aria-hidden />}
+            {view === 'map' ? 'Details' : 'Full map'}
+          </button>
         )}
 
         {/* Screen-reader summary of what is drawn; also what the E2E suite asserts on. */}

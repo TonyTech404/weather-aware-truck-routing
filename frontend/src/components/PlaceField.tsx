@@ -84,7 +84,7 @@ export function PlaceField({ label, marker, value, error, onChange }: Props) {
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 120)}
           onKeyDown={onKeyDown}
-          className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-ink-400 lg:text-sm"
+          className="h-full min-w-0 flex-1 bg-transparent text-[16px] outline-none placeholder:text-ink-400 lg:text-sm"
         />
         {status === 'loading' && <LoaderCircle className="size-4 animate-spin text-ink-400" aria-label="Searching" />}
         {text && (

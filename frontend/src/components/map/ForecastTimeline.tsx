@@ -86,7 +86,7 @@ export function ForecastTimeline({
             aria-label="Heatmap shows"
             value={metric}
             onChange={(e) => onMetric(e.target.value as Metric)}
-            className="h-[44px] rounded-md border border-line-strong bg-surface px-2 text-sm"
+            className="h-[44px] rounded-md border border-line-strong bg-surface px-2 text-[16px]"
           >
             {METRICS.map(({ key, label: text }) => (
               <option key={key} value={key}>

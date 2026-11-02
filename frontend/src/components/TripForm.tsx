@@ -79,7 +79,7 @@ export function TripForm({ values, onChange, fieldsKey, serverErrors, loading, o
           max={toLocalInputValue(max)}
           aria-invalid={errors.departure ? true : undefined}
           onChange={(e) => set({ departure: e.target.value })}
-          className={`h-[44px] w-full rounded-md border bg-surface px-2.5 text-sm lg:h-9 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none ${errors.departure ? 'border-[#d5403f]' : 'border-line-strong'}`}
+          className={`h-[44px] w-full min-w-0 max-w-full rounded-md border bg-surface px-2.5 text-[16px] lg:h-9 lg:text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none ${errors.departure ? 'border-[#d5403f]' : 'border-line-strong'}`}
         />
         {errors.departure && (
           <p role="alert" className="mt-1 text-xs text-[#a02323]">

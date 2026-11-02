@@ -11,7 +11,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { toLocalInputValue } from '@/lib/format'
 import type { TripPreset } from '@/lib/presets'
 import { toRequest, type TripFormValues } from '@/lib/validation'
-import { initialWorkspace, workspaceReducer } from '@/state/workspace'
+import { initialWorkspace, workspaceReducer, type MobileView } from '@/state/workspace'
 import type { AnalysisResponse, AnalyzeRequest } from '@/types/api'
 
 function nextHour(): string {
@@ -39,6 +39,7 @@ export default function App() {
   const { state, run } = useAnalysis()
   const [ws, dispatch] = useReducer(workspaceReducer, initialWorkspace)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const [view, setView] = useState<MobileView>('split')
 
   // Keep the last successful analysis on screen while a new one loads or fails.
   const [shown, setShown] = useState<AnalysisResponse | null>(null)
@@ -93,15 +94,24 @@ export default function App() {
     setFieldsKey((k) => k + 1)
   }
 
+  // Side-by-side layouts always show both; the stacked phone layout can give the map or the details the whole screen.
+  const mode: MobileView = sideBySide ? 'split' : view
+  const stackedRows =
+    mode === 'map' ? 'grid-rows-[minmax(0,1fr)_0px]' : mode === 'panel' ? 'grid-rows-[0px_minmax(0,1fr)]' : shown ? 'grid-rows-[54dvh_minmax(0,1fr)]' : 'grid-rows-[28dvh_minmax(0,1fr)]'
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar onOpenMethodology={() => setMethodologyOpen(true)} />
       <div
         className={`grid min-h-0 flex-1 ${
-          sideBySide ? 'grid-cols-[minmax(320px,400px)_1fr] grid-rows-1' : shown ? 'grid-rows-[54dvh_1fr]' : 'grid-rows-[28dvh_1fr]'
+          sideBySide ? 'grid-cols-[minmax(320px,400px)_minmax(0,1fr)] grid-rows-1' : `grid-cols-[minmax(0,1fr)] ${stackedRows}`
         }`}
       >
-        <main className={`relative min-h-0 ${sideBySide ? 'order-2' : 'order-1'}`} aria-label="Map">
+        <main
+          className={`relative min-h-0 min-w-0 overflow-hidden ${sideBySide ? 'order-2' : 'order-1'}`}
+          aria-label="Map"
+          inert={mode === 'panel'}
+        >
           <MapWorkspace
             data={shown}
             ws={ws}
@@ -111,14 +121,17 @@ export default function App() {
             busy={loading}
             compact={!desktop}
             inspectorOnMap={desktop}
+            view={mode}
+            onView={setView}
           />
         </main>
         <aside
-          className={`min-h-0 overflow-y-auto overscroll-contain bg-canvas ${sideBySide ? 'order-1 border-r border-line' : 'order-2 border-t border-line'}`}
-          style={{ paddingBottom: inspector ? '56dvh' : undefined }}
+          className={`min-h-0 min-w-0 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain bg-canvas ${sideBySide ? 'order-1 border-r border-line' : 'order-2 border-t border-line'}`}
+          style={{ paddingBottom: sideBySide ? undefined : `calc(env(safe-area-inset-bottom) + ${inspector ? '56dvh' : '96px'})` }}
+          inert={mode === 'map'}
           aria-label="Trip planner"
         >
-          {shown && !desktop && <SectionNav />}
+          {shown && !desktop && <SectionNav view={mode} onView={setView} />}
           <div id="sec-trip" className="scroll-mt-14 border-b border-line bg-surface">
             <TripForm
               values={values}

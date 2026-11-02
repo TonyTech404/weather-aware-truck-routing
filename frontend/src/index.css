@@ -29,6 +29,36 @@ html {
   font-size: 14px;
 }
 
+/* The app is a fixed full-screen frame. Locking it stops the page (and Safari's rubber band)
+   from ever sliding sideways; the planner scrolls vertically inside its own panel. */
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+button,
+summary,
+input,
+select,
+[role='radio'],
+[role='option'] {
+  touch-action: manipulation;
+}
+/* iOS gives date inputs an intrinsic width wider than their box unless told otherwise. */
+input[type='datetime-local'] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
+}
+input[type='datetime-local']::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 body {
   margin: 0;
   background: var(--color-canvas);

@@ -25,8 +25,10 @@ export default defineConfig({
     launchOptions: { args: WEBGL_ARGS },
   },
   projects: [
-    { name: 'desktop', testIgnore: [/responsive/, /smoke/], use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
-    { name: 'mobile', testMatch: /responsive/, use: { ...devices['Pixel 7'] } },
+    { name: 'desktop', testIgnore: [/responsive/, /smoke/, /phone-safari/], use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
+    { name: 'mobile', testMatch: [/responsive/, /phone-safari/], use: { ...devices['Pixel 7'] } },
+    // WebKit is the engine behind every browser on iPhone; it caught what Chromium emulation missed.
+    { name: 'mobile-safari', testMatch: /phone-safari/, use: { ...devices['iPhone 14'] } },
   ],
   webServer: [
     {

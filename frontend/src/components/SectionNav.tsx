@@ -1,28 +1,59 @@
-import { ListChecks, Map as MapIcon, Route as RouteIcon, SlidersHorizontal } from 'lucide-react'
+import { ChevronsUp, ListChecks, Map as MapIcon, Route as RouteIcon, ShieldAlert, SlidersHorizontal } from 'lucide-react'
+import { cn } from '@/lib/cn'
+import type { MobileView } from '@/state/workspace'
 
 const SECTIONS = [
   { id: 'sec-trip', label: 'Trip', Icon: SlidersHorizontal },
   { id: 'sec-routes', label: 'Routes', Icon: RouteIcon },
-  { id: 'sec-detail', label: 'Weather', Icon: MapIcon },
-  { id: 'sec-checkpoints', label: 'Checkpoints', Icon: ListChecks },
+  { id: 'sec-detail', label: 'Risk', Icon: ShieldAlert },
+  { id: 'sec-checkpoints', label: 'Checkpoints', short: 'Points', Icon: ListChecks },
 ] as const
 
-/** Phone-only shortcut bar: jump between the form, routes, risk summary and checkpoint list. */
-export function SectionNav() {
+interface Props {
+  view: MobileView
+  onView: (view: MobileView) => void
+}
+
+/**
+ * Phone-only bar pinned to the top of the planner: jump between sections, or switch how much of
+ * the screen the map gets. Five equal columns, so nothing ever scrolls sideways.
+ */
+export function SectionNav({ view, onView }: Props) {
+  const expanded = view === 'panel'
   return (
     <nav
       aria-label="Jump to section"
-      className="sticky top-0 z-20 flex gap-1.5 overflow-x-auto border-b border-line bg-canvas/95 px-3 py-2 backdrop-blur"
+      className="sticky top-0 z-20 grid grid-cols-5 gap-1 border-b border-line bg-canvas/95 px-2 py-1.5 backdrop-blur"
     >
-      {SECTIONS.map(({ id, label, Icon }) => (
+      <button
+        type="button"
+        onClick={() => onView(expanded ? 'split' : 'panel')}
+        aria-label={expanded ? 'Show the map again' : 'Expand details to full screen'}
+        className="flex h-[46px] flex-col items-center justify-center gap-0.5 rounded-lg bg-brand-700 text-[11px] font-medium text-white active:bg-brand-800"
+      >
+        {expanded ? <MapIcon className="size-[18px]" aria-hidden /> : <ChevronsUp className="size-[18px]" aria-hidden />}
+        {expanded ? 'Map' : 'Expand'}
+      </button>
+      {SECTIONS.map(({ id, label, Icon, ...rest }) => (
         <button
           key={id}
           type="button"
-          onClick={() => document.getElementById(id)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}
-          className="flex h-[42px] shrink-0 items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3.5 text-sm font-medium text-ink-700 active:bg-brand-50"
+          onClick={() => {
+            document.getElementById(id)?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+          }}
+          className={cn(
+            'flex h-[46px] flex-col items-center justify-center gap-0.5 rounded-lg border border-line-strong bg-surface text-[11px] font-medium text-ink-700 active:bg-brand-50',
+          )}
         >
-          <Icon className="size-4 text-brand-700" aria-hidden />
-          {label}
+          <Icon className="size-[18px] text-brand-700" aria-hidden />
+          {'short' in rest ? (
+            <>
+              <span className="hidden min-[360px]:inline">{label}</span>
+              <span className="min-[360px]:hidden">{rest.short}</span>
+            </>
+          ) : (
+            label
+          )}
         </button>
       ))}
     </nav>
