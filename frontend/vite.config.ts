@@ -12,6 +12,7 @@ export default defineConfig({
     // In development the browser calls /api on the Vite origin; this forwards it to Django.
     proxy: { '/api': process.env.VITE_DEV_API_TARGET ?? 'http://127.0.0.1:8000' },
   },
+  preview: { proxy: { '/api': process.env.VITE_DEV_API_TARGET ?? 'http://127.0.0.1:8000' } },
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 1200, // maplibre-gl is ~1 MB; it loads lazily in its own chunk
