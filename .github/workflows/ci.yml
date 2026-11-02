@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  API_URL: https://routeguard-api.buildwithanthony.workers.dev
-  WEB_URL: https://routeguard-web.buildwithanthony.workers.dev
+  API_URL: https://routeguard-api.buildwithanthony.com
+  WEB_URL: https://routeguard.buildwithanthony.com
 
 jobs:
   backend:

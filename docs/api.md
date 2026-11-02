@@ -1,6 +1,6 @@
 # API contract
 
-Base URL: `https://routeguard-api.buildwithanthony.workers.dev` (local: `http://127.0.0.1:8000`).
+Base URL: `https://routeguard-api.buildwithanthony.com` (local: `http://127.0.0.1:8000`).
 All responses are JSON. Errors share one shape:
 
 ```json

@@ -7,8 +7,8 @@ meet. Enter an origin, destination, departure time and load weight. RouteGuard f
 checkpoints along the real road, forecasts conditions at the truck's estimated arrival at each one, applies the load-aware
 risk rules, and recommends a route, with its reasoning shown.
 
-* **Live app:** https://routeguard-web.buildwithanthony.workers.dev
-* **API:** https://routeguard-api.buildwithanthony.workers.dev (`/api/health`)
+* **Live app:** https://routeguard.buildwithanthony.com
+* **API:** https://routeguard-api.buildwithanthony.com (`/api/health`)
 * Built for the Spotter AI full-stack assessment (React + Django).
 
 ![RouteGuard showing Chicago to Denver with a rain-driven Severe checkpoint, the forecast heatmap and timeline](docs/screenshots/heatmap-timeline.png)
