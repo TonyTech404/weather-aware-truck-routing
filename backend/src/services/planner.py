@@ -35,9 +35,13 @@ MIN_TRIP_MI = 1.0
 
 
 @dataclass(frozen=True)
-class TimelineEntry:
-    weather: WeatherSample | None
-    level: RiskLevel | None
+class Timeline:
+    """Forecast at one place for departure + 0..48 h, as parallel lists (index = hour)."""
+
+    levels: list[RiskLevel | None]
+    wind_mph: list[float | None]
+    rain_in_hr: list[float | None]
+    snow_in_hr: list[float | None]
 
 
 @dataclass(frozen=True)
@@ -46,7 +50,7 @@ class CheckpointResult:
     segment_mi: tuple[float, float]
     weather: WeatherSample | None  # forecast at the truck's ETA
     assessment: RiskAssessment
-    timeline: list[TimelineEntry]  # forecast at departure + 0..48 h, same place
+    timeline: Timeline
 
 
 @dataclass(frozen=True)
@@ -84,17 +88,13 @@ def validate_departure(departure_utc: datetime, now: datetime) -> None:
         )
 
 
-def _timeline(series: ForecastSeries | None, departure: datetime, load_lb: float):
-    entries = []
-    for hour in range(TIMELINE_HOURS + 1):
-        sample = series.sample_at(departure + timedelta(hours=hour)) if series else None
-        level = (
-            level_for(sample.wind_mph, sample.rain_in_hr, sample.snow_in_hr, load_lb)
-            if sample
-            else None
-        )
-        entries.append(TimelineEntry(sample, level))
-    return entries
+def _timeline(series: ForecastSeries | None, departure: datetime, load_lb: float) -> Timeline:
+    if series is None:
+        empty: list = [None] * (TIMELINE_HOURS + 1)
+        return Timeline(list(empty), list(empty), list(empty), list(empty))
+    wind, rain, snow = series.hourly_window(departure, TIMELINE_HOURS)
+    levels = [level_for(w, r, s, load_lb) for w, r, s in zip(wind, rain, snow, strict=True)]
+    return Timeline(levels, wind, rain, snow)
 
 
 def analyze_route(

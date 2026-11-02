@@ -44,6 +44,11 @@ async function request<T>(path: string, init: RequestInit, signal?: AbortSignal)
   }
   if (!response.ok) {
     const error = (body as ApiErrorBody | null)?.error
+    // A 5xx with no JSON error body comes from the platform (for example a Worker that ran
+    // out of CPU), not from RouteGuard's own error handling.
+    if (!error && response.status >= 500) {
+      throw new ApiError('busy', 'RouteGuard is busy right now. Please try again in a moment.', response.status)
+    }
     throw new ApiError(
       error?.code ?? 'http_error',
       error?.message ?? `Unexpected response (${response.status}).`,
@@ -64,10 +69,20 @@ export async function searchPlaces(query: string, signal?: AbortSignal): Promise
   return data.results
 }
 
-export function analyzeTrip(body: AnalyzeRequest, signal?: AbortSignal): Promise<AnalysisResponse> {
-  return request<AnalysisResponse>(
-    '/api/analyze',
-    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
-    signal,
-  )
+export async function analyzeTrip(body: AnalyzeRequest, signal?: AbortSignal): Promise<AnalysisResponse> {
+  const send = () =>
+    request<AnalysisResponse>(
+      '/api/analyze',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+      signal,
+    )
+  try {
+    return await send()
+  } catch (err) {
+    // One transparent retry for platform hiccups; the server caches routes and forecasts, so
+    // the second attempt is usually much cheaper. Provider outages and rate limits are not retried.
+    if (!(err instanceof ApiError) || err.code !== 'busy') throw err
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    return send()
+  }
 }

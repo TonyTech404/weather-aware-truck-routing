@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from domain.geometry import haversine_mi
@@ -7,6 +9,7 @@ from services.routing import (
     NoRouteError,
     corridor_waypoints,
     fetch_routes,
+    gather_with_grace,
     has_backtrack,
     overlap,
     parse_osrm_route,
@@ -181,3 +184,65 @@ class TestBacktracking:
         good = parse_valhalla_trip(valhalla_trip(straight_shape(lon=-96.0), 1.1, 70))
         routes = select_routes([bad, good])
         assert len(routes) == 1 and routes[0].duration_s == good.duration_s
+
+
+class TestCachingAndDedupe:
+    async def test_identical_provider_routes_are_decoded_once(self):
+        trip = valhalla_trip(straight_shape(), 1.0, 70)
+        http = FakeHttp(valhalla=[trip, trip])  # default + an "alternate" identical to it
+        result = await fetch_routes(http, ORIGIN, DEST, load_lb=10_000)
+        assert len(result.routes) == 1
+
+    async def test_second_request_for_the_same_trip_makes_no_provider_calls(self):
+        http = FakeHttp(valhalla=[valhalla_trip(straight_shape(), 1.0, 70)])
+        first = await fetch_routes(http, ORIGIN, DEST, load_lb=10_000)
+        calls = len(http.calls)
+        second = await fetch_routes(http, ORIGIN, DEST, load_lb=10_000)
+        assert second is first and len(http.calls) == calls
+
+    async def test_a_materially_different_load_is_routed_again(self):
+        http = FakeHttp(valhalla=[valhalla_trip(straight_shape(), 1.0, 70)])
+        await fetch_routes(http, ORIGIN, DEST, load_lb=10_000)
+        calls = len(http.calls)
+        await fetch_routes(http, ORIGIN, DEST, load_lb=60_000)
+        assert len(http.calls) > calls
+
+    async def test_failures_are_not_cached(self):
+        err = UpstreamError("routing", "HTTP 503", 503)
+        down = FakeHttp(valhalla=err, osrm=err)
+        with pytest.raises(UpstreamError):
+            await fetch_routes(down, ORIGIN, DEST, load_lb=10_000)
+        up = FakeHttp(valhalla=[valhalla_trip(straight_shape(), 1.0, 70)])
+        assert (await fetch_routes(up, ORIGIN, DEST, load_lb=10_000)).routes
+
+
+class TestGatherWithGrace:
+    async def test_returns_results_in_order_and_exceptions_in_place(self):
+        async def ok(value):
+            return value
+
+        async def boom():
+            raise ValueError("x")
+
+        results = await gather_with_grace([ok(1), boom(), ok(3)], grace_s=1)
+        assert results[0] == 1 and results[2] == 3 and isinstance(results[1], ValueError)
+
+    async def test_stragglers_are_abandoned_after_the_grace_period(self):
+        async def fast():
+            return "fast"
+
+        async def stuck():
+            await asyncio.sleep(30)
+
+        started = asyncio.get_running_loop().time()
+        results = await gather_with_grace([fast(), stuck()], grace_s=0.05)
+        assert asyncio.get_running_loop().time() - started < 2
+        assert results[0] == "fast" and isinstance(results[1], TimeoutError)
+
+    async def test_waits_for_every_call_when_none_has_succeeded_yet(self):
+        async def slow_fail():
+            await asyncio.sleep(0.05)
+            raise ValueError("late")
+
+        results = await gather_with_grace([slow_fail(), slow_fail()], grace_s=0.01)
+        assert all(isinstance(r, ValueError) for r in results)

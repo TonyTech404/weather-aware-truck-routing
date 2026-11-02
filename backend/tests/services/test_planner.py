@@ -59,7 +59,7 @@ class TestAnalyzeTrip:
             seconds=route.route.duration_s
         )
         assert first.weather.wind_mph == 5.0
-        assert len(first.timeline) == 49
+        assert len(first.timeline.levels) == 49 and len(first.timeline.wind_mph) == 49
         assert result.timezone == "America/Chicago"
 
     async def test_weather_is_read_at_each_checkpoint_eta_not_at_departure(self):
@@ -132,7 +132,7 @@ class TestAnalyzeTrip:
         levels = [c.assessment.level for c in result.routes[0].checkpoints]
         assert levels[0] is not None and levels[-1] is None
         assert 0 < result.routes[0].stats.unknown_mi < result.routes[0].route.distance_mi
-        assert result.routes[0].checkpoints[0].timeline[-1].level is None  # slider hour 48
+        assert result.routes[0].checkpoints[0].timeline.levels[-1] is None  # slider hour 48
 
     async def test_validation_errors_surface_before_any_weather_fetch(self):
         http = FakeHttp(valhalla=two_routes())

@@ -58,6 +58,32 @@ class TestSampling:
         assert not s.covers(T0, T0 + timedelta(hours=3))
 
 
+class TestHourlyWindow:
+    @pytest.mark.parametrize("offset_minutes", [-300, -90, -30, 0, 29, 30, 61, 100, 119, 120, 600])
+    def test_matches_sample_at_for_every_hour(self, offset_minutes):
+        s = series(
+            wind=(10.0, None, 30.0, 40.0),
+            gust=(1.0,) * 4,
+            rain=(0.0, 0.1, None, 0.3),
+            snow=(None, 0.0, 1.0, 2.0),
+        )
+        start = T0 + timedelta(minutes=offset_minutes)
+        wind, rain, snow = s.hourly_window(start, 6)
+        assert len(wind) == len(rain) == len(snow) == 7
+        for hour in range(7):
+            sample = s.sample_at(start + timedelta(hours=hour))
+            expected = (
+                (None, None, None)
+                if sample is None
+                else (sample.wind_mph, sample.rain_in_hr, sample.snow_in_hr)
+            )
+            assert (wind[hour], rain[hour], snow[hour]) == expected
+
+    def test_window_entirely_outside_is_all_unknown(self):
+        wind, rain, snow = series().hourly_window(T0 + timedelta(days=3), 4)
+        assert wind == rain == snow == [None] * 5
+
+
 class TestParsing:
     def payload(self, **hourly):
         base = {"time": [0, 3600], "wind_speed_10m": [1.0, 2.0], "wind_gusts_10m": [3.0, 4.0],

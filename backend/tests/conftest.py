@@ -1,12 +1,12 @@
 import pytest
 
-from services import weather
+from services import routing, weather
 
 
 @pytest.fixture(autouse=True)
 def clear_weather_caches():
-    weather._forecast_cache.clear()
-    weather._timezone_cache.clear()
+    for cache in (weather._forecast_cache, weather._timezone_cache, routing._route_cache):
+        cache.clear()
     yield
-    weather._forecast_cache.clear()
-    weather._timezone_cache.clear()
+    for cache in (weather._forecast_cache, weather._timezone_cache, routing._route_cache):
+        cache.clear()

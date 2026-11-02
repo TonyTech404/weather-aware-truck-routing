@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import math
 import re
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
 
@@ -43,6 +44,7 @@ DUPLICATE_OVERLAP = 0.9
 BACKTRACK_GAP_MI = 15.0  # revisiting a spot after this much road means a spur or loop
 SHAPE_SPACING_MI = 0.25  # thin dense provider geometry before per-vertex work
 CORRIDOR_OFFSET_FRACTION = 0.12
+STRAGGLER_GRACE_S = 5.0  # after the first candidate set arrives, wait this long for the rest
 
 # Assumed vehicle: 5-axle tractor-trailer, US legal dimensions.
 TRUCK_TARE_LB = 33_000
@@ -54,6 +56,11 @@ VALHALLA_PROFILES: tuple[tuple[dict, int], ...] = (
     ({}, 2),  # default cost, plus Valhalla's own alternates
     ({"shortest": True}, 0),
 )
+
+
+ROUTE_CACHE_TTL_S = 15 * 60
+ROUTE_CACHE_MAX = 64
+_route_cache: dict[tuple, tuple[float, RoutingResult]] = {}
 
 
 class NoRouteError(Exception):
@@ -68,7 +75,43 @@ class RoutingResult:
     notes: list[str] = field(default_factory=list)
 
 
+async def gather_with_grace(coroutines, grace_s: float = STRAGGLER_GRACE_S) -> list:
+    """Like `gather(..., return_exceptions=True)`, but stop waiting `grace_s` seconds after
+    the first success. Public routing servers occasionally stall on one request; the other
+    candidates are enough, and the user should not wait 30 s for the slowest.
+    Abandoned calls are cancelled and reported as TimeoutError in their slot."""
+    tasks = [asyncio.ensure_future(c) for c in coroutines]
+    loop = asyncio.get_running_loop()
+    pending = set(tasks)
+    deadline: float | None = None
+    while pending:
+        timeout = None if deadline is None else max(0.0, deadline - loop.time())
+        done, pending = await asyncio.wait(
+            pending, timeout=timeout, return_when=asyncio.FIRST_COMPLETED
+        )
+        if not done:
+            break
+        if deadline is None and any(not t.cancelled() and t.exception() is None for t in done):
+            deadline = loop.time() + grace_s
+    for task in pending:
+        task.cancel()
+    return [
+        TimeoutError("abandoned")
+        if t.cancelled() or not t.done()
+        else (t.exception() or t.result())
+        for t in tasks
+    ]
+
+
 # --------------------------------------------------------------------------- parsing
+
+
+def _unique(items, key):
+    """Drop provider routes with identical (length, time) before the costly decode."""
+    seen: dict = {}
+    for item in items:
+        seen.setdefault(key(item), item)
+    return list(seen.values())
 
 
 def _prefix_sums(values: list[float]) -> list[float]:
@@ -265,15 +308,17 @@ async def _valhalla_candidates(http, origin, destination, load_lb) -> list[Route
         payload = await http.request_json(
             "POST", VALHALLA_URL, service="routing", json_body=body, timeout=30.0
         )
-        trips = [payload["trip"], *(alt["trip"] for alt in payload.get("alternates", []))]
-        return [parse_valhalla_trip(trip) for trip in trips]
+        return [payload["trip"], *(alt["trip"] for alt in payload.get("alternates", []))]
 
     requests = [one(options, alts) for options, alts in VALHALLA_PROFILES]
     requests += [one({}, 0, via) for via in corridor_waypoints(origin, destination)]
-    results = await asyncio.gather(*requests, return_exceptions=True)
-    routes = [r for result in results if isinstance(result, list) for r in result]
-    if routes:
-        return routes
+    results = await gather_with_grace(requests)
+    trips = _unique(
+        (trip for result in results if isinstance(result, list) for trip in result),
+        lambda trip: (round(trip["summary"]["length"], 1), round(trip["summary"]["time"])),
+    )
+    if trips:
+        return [parse_valhalla_trip(trip) for trip in trips]
     errors = [r for r in results if isinstance(r, Exception)]
     no_path = [
         e for e in errors if isinstance(e, UpstreamError) and "No path could be found" in str(e)
@@ -301,16 +346,19 @@ async def _osrm_candidates(http, origin, destination) -> list[Route]:
         )
         if payload.get("code") == "NoRoute":
             return []
-        return [parse_osrm_route(r) for r in payload.get("routes", [])]
+        return payload.get("routes", [])
 
     requests = [one([origin, destination], "3")]
     requests += [
         one([origin, via, destination], "false") for via in corridor_waypoints(origin, destination)
     ]
-    results = await asyncio.gather(*requests, return_exceptions=True)
-    routes = [r for result in results if isinstance(result, list) for r in result]
-    if routes:
-        return routes
+    results = await gather_with_grace(requests)
+    raw = _unique(
+        (route for result in results if isinstance(result, list) for route in result),
+        lambda route: (round(route["distance"] / 1609.344, 1), round(route["duration"])),
+    )
+    if raw:
+        return [parse_osrm_route(route) for route in raw]
     errors = [r for r in results if isinstance(r, Exception)]
     if errors:
         raise errors[0]
@@ -318,6 +366,29 @@ async def _osrm_candidates(http, origin, destination) -> list[Route]:
 
 
 async def fetch_routes(
+    http: HttpClient, origin: LatLon, destination: LatLon, load_lb: float
+) -> RoutingResult:
+    """Routes between two points. Geometry does not depend on departure time or sampling
+    interval, so results are cached briefly: re-analysing with a new load, departure or
+    interval then costs no provider calls and no geometry processing."""
+    key = (
+        round(origin.lat, 4),
+        round(origin.lon, 4),
+        round(destination.lat, 4),
+        round(destination.lon, 4),
+        round(truck_weight_tonnes(load_lb)),
+    )
+    cached = _route_cache.get(key)
+    if cached and time.time() - cached[0] < ROUTE_CACHE_TTL_S:
+        return cached[1]
+    result = await _fetch_routes(http, origin, destination, load_lb)
+    if len(_route_cache) >= ROUTE_CACHE_MAX:
+        _route_cache.clear()
+    _route_cache[key] = (time.time(), result)
+    return result
+
+
+async def _fetch_routes(
     http: HttpClient, origin: LatLon, destination: LatLon, load_lb: float
 ) -> RoutingResult:
     notes: list[str] = []

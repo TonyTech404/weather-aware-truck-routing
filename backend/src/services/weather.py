@@ -43,16 +43,16 @@ def forecast_horizon_end(now: datetime) -> datetime:
     return floor_hour(now.astimezone(UTC)) + timedelta(days=HORIZON_DAYS)
 
 
-def _clean(value) -> float | None:
-    if value is None or (isinstance(value, float) and not math.isfinite(value)):
-        return None
-    return float(value)
+def _clean(values) -> tuple[float | None, ...]:
+    """Missing or non-finite readings become None. Inline checks keep this loop cheap."""
+    return tuple(None if v is None or v != v or v in (math.inf, -math.inf) else v for v in values)
 
 
-def _sum_present(a: float | None, b: float | None) -> float | None:
-    if a is None and b is None:
-        return None
-    return (a or 0.0) + (b or 0.0)
+def _rain(rain, showers) -> tuple[float | None, ...]:
+    return tuple(
+        None if r is None and s is None else (r or 0.0) + (s or 0.0)
+        for r, s in zip(_clean(rain), _clean(showers), strict=True)
+    )
 
 
 @dataclass(frozen=True)
@@ -87,6 +87,24 @@ class ForecastSeries:
             return None
         return sample
 
+    def hourly_window(
+        self, start: datetime, hours: int
+    ) -> tuple[list[float | None], list[float | None], list[float | None]]:
+        """(wind, rain, snow) for start + 0..hours hours, None where no forecast exists.
+
+        Equivalent to calling `sample_at` for each hour, but built with slices instead of
+        an object per hour, which matters for hundreds of checkpoints on Pyodide.
+        """
+        first = math.floor((start.timestamp() - self.start_epoch) / 3600 + 0.5)
+        last = first + hours + 1  # exclusive
+        lo, hi = max(first, 0), min(last, len(self.wind))
+        if hi <= lo:
+            return [None] * (hours + 1), [None] * (hours + 1), [None] * (hours + 1)
+        front, back = [None] * (lo - first), [None] * (last - hi)
+        return tuple(  # type: ignore[return-value]
+            front + list(source[lo:hi]) + back for source in (self.wind, self.rain, self.snow)
+        )
+
 
 def parse_forecasts(payload) -> list[ForecastSeries]:
     """Open-Meteo returns a list for multi-location requests and an object for one."""
@@ -107,12 +125,10 @@ def parse_forecasts(payload) -> list[ForecastSeries]:
         series.append(
             ForecastSeries(
                 start_epoch=int(times[0]),
-                wind=tuple(_clean(v) for v in hourly.get("wind_speed_10m") or [None] * count),
-                gust=tuple(_clean(v) for v in hourly.get("wind_gusts_10m") or [None] * count),
-                rain=tuple(
-                    _sum_present(_clean(r), _clean(s)) for r, s in zip(rain, showers, strict=True)
-                ),
-                snow=tuple(_clean(v) for v in hourly.get("snowfall") or [None] * count),
+                wind=_clean(hourly.get("wind_speed_10m") or [None] * count),
+                gust=_clean(hourly.get("wind_gusts_10m") or [None] * count),
+                rain=_rain(rain, showers),
+                snow=_clean(hourly.get("snowfall") or [None] * count),
             )
         )
     return series

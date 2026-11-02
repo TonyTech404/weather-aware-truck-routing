@@ -68,14 +68,10 @@ def serialize_checkpoint(result: CheckpointResult) -> dict:
         "risk": serialize_risk(result.assessment),
         # Index h is the forecast at departure + h hours, for the 0-48 h slider.
         "timeline": {
-            "levels": [None if e.level is None else int(e.level) for e in timeline],
-            "wind_mph": [_round(e.weather.wind_mph, 1) if e.weather else None for e in timeline],
-            "rain_in_hr": [
-                _round(e.weather.rain_in_hr, 2) if e.weather else None for e in timeline
-            ],
-            "snow_in_hr": [
-                _round(e.weather.snow_in_hr, 2) if e.weather else None for e in timeline
-            ],
+            "levels": [None if level is None else int(level) for level in timeline.levels],
+            "wind_mph": [None if v is None else round(v, 1) for v in timeline.wind_mph],
+            "rain_in_hr": [None if v is None else round(v, 2) for v in timeline.rain_in_hr],
+            "snow_in_hr": [None if v is None else round(v, 2) for v in timeline.snow_in_hr],
         },
     }
 

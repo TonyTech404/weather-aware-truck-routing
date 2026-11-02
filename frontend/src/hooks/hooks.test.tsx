@@ -45,11 +45,32 @@ describe('api client', () => {
     expect(await analyzeTrip(request).catch((e) => e)).toMatchObject({ retryable: true })
   })
 
+  it('retries once when the platform fails without a JSON body, then succeeds', async () => {
+    let calls = 0
+    mockFetch(() => (++calls === 1 ? new Response('error code: 1102', { status: 503 }) : json(analysis())))
+    const result = await analyzeTrip(request)
+    expect(result.routes).toHaveLength(2)
+    expect(calls).toBe(2)
+  })
+
+  it('gives up with a friendly message after a second platform failure', async () => {
+    const spy = mockFetch(() => new Response('error code: 1102', { status: 503 }))
+    const error = await analyzeTrip(request).catch((e) => e)
+    expect(spy).toHaveBeenCalledTimes(2)
+    expect(error).toMatchObject({ code: 'busy', retryable: true, message: expect.stringContaining('busy') })
+  })
+
+  it('does not retry provider failures or rate limits', async () => {
+    const spy = mockFetch(() => json({ error: { code: 'weather_rate_limited', message: 'slow down' } }, 503))
+    await analyzeTrip(request).catch(() => {})
+    expect(spy).toHaveBeenCalledTimes(1)
+  })
+
   it('reports an unreachable API and unreadable bodies', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
     expect(await analyzeTrip(request).catch((e) => e)).toMatchObject({ code: 'network', retryable: true })
     mockFetch(() => new Response('<html>oops</html>', { status: 500 }))
-    expect(await analyzeTrip(request).catch((e) => e)).toMatchObject({ code: 'http_error', status: 500 })
+    expect(await analyzeTrip(request).catch((e) => e)).toMatchObject({ code: 'busy', status: 500 })
   })
 
   it('encodes search queries', async () => {
