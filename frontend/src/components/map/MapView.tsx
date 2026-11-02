@@ -178,13 +178,16 @@ export default function MapView({
       style: BASEMAP_STYLE_URL,
       center: [-96, 38.5],
       zoom: 3.6,
-      attributionControl: { compact: true },
+      attributionControl: false,
       dragRotate: false,
       pitchWithRotate: false,
     })
     mapRef.current = map
     map.touchZoomRotate.disableRotation()
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
+    // On phones the timeline occupies the bottom of the small map, so credit the data at the top.
+    const wide = window.matchMedia('(min-width: 1024px)').matches
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), wide ? 'bottom-right' : 'top-right')
 
     let fellBack = false
     // style.load fires for the first style and for the fallback, so layers install in both cases.

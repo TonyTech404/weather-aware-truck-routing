@@ -137,7 +137,7 @@ export function ForecastTimeline({
           />
         )}
       </div>
-      <div className="relative mt-1 flex justify-between text-[11px] text-ink-500" aria-hidden>
+      <div className={cn('relative mt-1 flex justify-between text-[11px] text-ink-500', compact && 'hidden')} aria-hidden>
         {[0, 12, 24, 36, 48].filter((h) => h <= hours).map((h) => (
           <span key={h} className="text-center">
             <span className="block font-medium text-ink-700">{h === 0 ? 'Depart' : `+${h} h`}</span>
