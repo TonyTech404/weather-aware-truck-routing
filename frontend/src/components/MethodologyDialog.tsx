@@ -7,10 +7,12 @@ interface Props {
   onClose: () => void
 }
 
-const ROWS = [
-  ['Wind', '< 25', '25–34', '35–44', '45–54', '≥ 55', 'mph'],
-  ['Rain', '< 0.10', '0.10–0.25', '0.25–0.50', '0.50–1.00', '> 1.00', 'in/hr'],
-  ['Snow', '< 0.5', '0.5–1.0', '1.0–2.0', '2.0–3.0', '> 3.0', 'in/hr'],
+const BANDS_TABLE: { level: (typeof RISK_LEVELS)[number]; wind: string; rain: string; snow: string }[] = [
+  { level: 'low', wind: '< 25', rain: '< 0.10', snow: '< 0.5' },
+  { level: 'moderate', wind: '25–34', rain: '0.10–0.25', snow: '0.5–1.0' },
+  { level: 'high', wind: '35–44', rain: '0.25–0.50', snow: '1.0–2.0' },
+  { level: 'severe', wind: '45–54', rain: '0.50–1.00', snow: '2.0–3.0' },
+  { level: 'no_travel', wind: '≥ 55', rain: '> 1.00', snow: '> 3.0' },
 ]
 
 export function MethodologyDialog({ open, onClose }: Props) {
@@ -34,42 +36,37 @@ export function MethodologyDialog({ open, onClose }: Props) {
         <h2 id="method-title" className="text-base font-semibold">
           How RouteGuard scores a trip
         </h2>
-        <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-ink-500 hover:bg-canvas">
+        <button type="button" onClick={onClose} aria-label="Close" className="flex size-[40px] items-center justify-center rounded text-ink-500 hover:bg-canvas lg:size-auto lg:p-1">
           <X className="size-4" />
         </button>
       </div>
       <div className="space-y-5 overflow-y-auto px-5 py-4 text-sm leading-relaxed text-ink-700">
         <section>
           <h3 className="mb-1 font-semibold text-ink-900">Risk thresholds</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-left text-xs">
-              <thead>
-                <tr className="text-ink-500">
-                  <th className="py-1 font-medium">Condition</th>
-                  {RISK_LEVELS.map((l) => (
-                    <th key={l} className="py-1 font-medium">
-                      <span className="mr-1 inline-block size-2 rounded-full align-middle" style={{ background: RISK[l].color }} />
-                      {RISK[l].label}
-                    </th>
-                  ))}
+          {/* Levels run down the side so all five fit a phone without sideways scrolling. */}
+          <table className="w-full text-left text-xs sm:text-sm">
+            <thead>
+              <tr className="text-ink-500">
+                <th className="py-1 pr-2 font-medium">Level</th>
+                <th className="px-1 py-1 font-medium">Wind (mph)</th>
+                <th className="px-1 py-1 font-medium">Rain (in/hr)</th>
+                <th className="px-1 py-1 font-medium">Snow (in/hr)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {BANDS_TABLE.map((row) => (
+                <tr key={row.level} className="border-t border-line">
+                  <th scope="row" className="py-1.5 pr-2 font-medium whitespace-nowrap">
+                    <span className="mr-1.5 inline-block size-2 rounded-full align-middle" style={{ background: RISK[row.level].color }} />
+                    {RISK[row.level].label}
+                  </th>
+                  <td className="px-1 py-1.5">{row.wind}</td>
+                  <td className="px-1 py-1.5">{row.rain}</td>
+                  <td className="px-1 py-1.5">{row.snow}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {ROWS.map(([name, ...cells]) => (
-                  <tr key={name} className="border-t border-line">
-                    <th scope="row" className="py-1.5 font-medium">
-                      {name} <span className="font-normal text-ink-400">({cells[5]})</span>
-                    </th>
-                    {cells.slice(0, 5).map((c) => (
-                      <td key={c} className="py-1.5">
-                        {c}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
           <p className="mt-2">
             A checkpoint takes its highest hazard. On a range boundary the more severe class applies. Load rules:
             wind of 45–54 mph with a load over 30,000 lb is No Travel; 35–44 mph with a load over 40,000 lb is Severe;

@@ -71,84 +71,93 @@ export function MapWorkspace({ data, ws, dispatch, endpoints, intervalMi, busy, 
       />
     ) : null
 
+  const timeline =
+    data && selected ? (
+      <ForecastTimeline
+        route={selected.route}
+        hours={hours}
+        hour={ws.hour}
+        departureUtc={data.request.departure_utc}
+        timezone={data.request.timezone}
+        playing={ws.playing}
+        metric={ws.metric}
+        onHour={(hour) => {
+          dispatch({ type: 'stopPlaying' })
+          dispatch({ type: 'setHour', hour })
+        }}
+        onTogglePlay={() => dispatch({ type: 'togglePlay' })}
+        onMetric={(metric) => dispatch({ type: 'setMetric', metric })}
+        compact={compact}
+      />
+    ) : null
+
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[#e9edf0]">
-      <Suspense
-        fallback={
-          <div className="absolute inset-0 flex items-center justify-center text-sm text-ink-500">
-            <LoaderCircle className="mr-2 size-4 animate-spin" /> Loading map…
-          </div>
-        }
-      >
-        <MapView
-          data={mapData}
-          fitKey={fitKey}
-          fitCoords={fitCoords}
-          intervalMi={intervalMi}
-          layers={ws.layers}
-          endpoints={endpoints}
-          focus={focus}
-          compact={compact}
-          onSelectRoute={(routeId) => dispatch({ type: 'selectRoute', routeId })}
-          onSelectCheckpoint={(routeId, index) => {
-            if (routeId !== ws.routeId) dispatch({ type: 'selectRoute', routeId })
-            dispatch({ type: 'selectCheckpoint', index })
-          }}
-        />
-      </Suspense>
-
-      <div className="absolute top-3 left-3">
-        <LayerControls
-          layers={ws.layers}
-          hasRoutes={prepared.length > 0}
-          onToggle={(layer) => dispatch({ type: 'toggleLayer', layer })}
-          onFit={() => setFitNonce((n) => n + 1)}
-        />
-      </div>
-
-      {busy && (
-        <div
-          role="status"
-          className="absolute top-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-line-strong bg-surface px-3 py-1.5 text-sm shadow-md"
+    <div className="flex h-full w-full flex-col bg-[#e9edf0]">
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <Suspense
+          fallback={
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-ink-500">
+              <LoaderCircle className="mr-2 size-4 animate-spin" /> Loading map…
+            </div>
+          }
         >
-          <LoaderCircle className="size-4 animate-spin text-brand-700" aria-hidden /> Analyzing routes…
+          <MapView
+            data={mapData}
+            fitKey={fitKey}
+            fitCoords={fitCoords}
+            intervalMi={intervalMi}
+            layers={ws.layers}
+            endpoints={endpoints}
+            focus={focus}
+            compact={compact}
+            onSelectRoute={(routeId) => dispatch({ type: 'selectRoute', routeId })}
+            onSelectCheckpoint={(routeId, index) => {
+              if (routeId !== ws.routeId) dispatch({ type: 'selectRoute', routeId })
+              dispatch({ type: 'selectCheckpoint', index })
+            }}
+          />
+        </Suspense>
+
+        <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+          <LayerControls
+            layers={ws.layers}
+            hasRoutes={prepared.length > 0}
+            compact={compact}
+            onToggle={(layer) => dispatch({ type: 'toggleLayer', layer })}
+            onFit={() => setFitNonce((n) => n + 1)}
+          />
         </div>
-      )}
 
-      {inspectorOnMap && inspector && <div className="absolute top-3 right-3 z-10 max-h-[calc(100%-1.5rem)] overflow-auto">{inspector}</div>}
+        {busy && (
+          <div
+            role="status"
+            className="absolute top-3 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-line-strong bg-surface px-3 py-1.5 text-sm shadow-md"
+          >
+            <LoaderCircle className="size-4 animate-spin text-brand-700" aria-hidden /> Analyzing routes…
+          </div>
+        )}
 
-      {data && selected && (
-        <div className="pointer-events-none absolute right-14 bottom-2 left-2 flex flex-col items-start gap-2 sm:right-14 sm:bottom-3 sm:left-3">
-          {!compact && (
+        {inspectorOnMap && inspector && (
+          <div className="absolute top-3 right-3 z-10 max-h-[calc(100%-1.5rem)] overflow-auto">{inspector}</div>
+        )}
+
+        {!compact && timeline && (
+          <div className="pointer-events-none absolute right-14 bottom-3 left-3 flex flex-col items-start gap-2">
             <div className="pointer-events-auto">
               <MapLegend metric={ws.metric} />
             </div>
-          )}
-          <div className="pointer-events-auto w-full max-w-[880px]">
-            <ForecastTimeline
-              route={selected.route}
-              hours={hours}
-              hour={ws.hour}
-              departureUtc={data.request.departure_utc}
-              timezone={data.request.timezone}
-              playing={ws.playing}
-              metric={ws.metric}
-              onHour={(hour) => {
-                dispatch({ type: 'stopPlaying' })
-                dispatch({ type: 'setHour', hour })
-              }}
-              onTogglePlay={() => dispatch({ type: 'togglePlay' })}
-              onMetric={(metric) => dispatch({ type: 'setMetric', metric })}
-              compact={compact}
-            />
+            <div className="pointer-events-auto w-full max-w-[880px]">{timeline}</div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Screen-reader summary of what is drawn; also what the E2E suite asserts on. */}
-      <p className="sr-only" role="status" data-testid="map-summary">
-        {data ? `${data.routes.length} route${data.routes.length === 1 ? '' : 's'} drawn on the map.` : 'No routes drawn.'}
-      </p>
+        {/* Screen-reader summary of what is drawn; also what the E2E suite asserts on. */}
+        <p className="sr-only" role="status" data-testid="map-summary">
+          {data ? `${data.routes.length} route${data.routes.length === 1 ? '' : 's'} drawn on the map.` : 'No routes drawn.'}
+        </p>
+      </div>
+
+      {/* On phones the timeline is its own bar under the map so it never hides the route. */}
+      {compact && timeline && <div className="shrink-0 border-t border-line-strong bg-surface px-2.5 py-2">{timeline}</div>}
     </div>
   )
 }

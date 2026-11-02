@@ -7,16 +7,18 @@ interface Props {
   onToggle: (layer: keyof WorkspaceState['layers']) => void
   onFit: () => void
   hasRoutes: boolean
+  compact?: boolean
 }
 
-export function LayerControls({ layers, onToggle, onFit, hasRoutes }: Props) {
+export function LayerControls({ layers, onToggle, onFit, hasRoutes, compact = false }: Props) {
+  const size = compact ? 'size-[44px]' : 'size-9'
   const items = [
     { key: 'heatmap', label: 'Weather heatmap', Icon: Layers },
     { key: 'checkpoints', label: 'Checkpoints', Icon: MapPin },
     { key: 'alternatives', label: 'Alternative routes', Icon: RouteIcon },
   ] as const
   return (
-    <div role="group" aria-label="Map layers" className="flex flex-col gap-px overflow-hidden rounded-md border border-line-strong bg-line-strong shadow-sm">
+    <div role="group" aria-label="Map layers" className={cn('flex gap-px overflow-hidden rounded-md border border-line-strong bg-line-strong shadow-sm', compact ? 'flex-row' : 'flex-col')}>
       {items.map(({ key, label, Icon }) => (
         <button
           key={key}
@@ -27,7 +29,7 @@ export function LayerControls({ layers, onToggle, onFit, hasRoutes }: Props) {
           disabled={!hasRoutes}
           onClick={() => onToggle(key)}
           className={cn(
-            'flex size-9 items-center justify-center bg-surface disabled:opacity-40',
+            `flex ${size} items-center justify-center bg-surface disabled:opacity-40`,
             layers[key] ? 'text-brand-700' : 'text-ink-400 hover:text-ink-700',
           )}
         >
@@ -40,7 +42,7 @@ export function LayerControls({ layers, onToggle, onFit, hasRoutes }: Props) {
         aria-label="Fit routes to view"
         disabled={!hasRoutes}
         onClick={onFit}
-        className="flex size-9 items-center justify-center bg-surface text-ink-500 hover:text-ink-900 disabled:opacity-40"
+        className={`flex ${size} items-center justify-center bg-surface text-ink-500 hover:text-ink-900 disabled:opacity-40`}
       >
         <Maximize className="size-[18px]" />
       </button>

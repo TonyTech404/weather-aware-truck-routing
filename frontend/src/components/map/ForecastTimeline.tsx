@@ -61,14 +61,14 @@ export function ForecastTimeline({
     <section
       aria-label="Forecast timeline"
       data-testid="timeline"
-      className="rounded-md border border-line-strong bg-surface/95 p-2.5 shadow-md sm:p-3"
+      className={compact ? '' : 'rounded-md border border-line-strong bg-surface/95 p-3 shadow-md'}
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <button
           type="button"
           onClick={onTogglePlay}
           aria-label={playing ? 'Pause forecast animation' : 'Play forecast animation'}
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-700 text-white hover:bg-brand-800"
+          className={cn('flex shrink-0 items-center justify-center rounded-full bg-brand-700 text-white hover:bg-brand-800', compact ? 'size-[44px]' : 'size-8')}
         >
           {playing ? <Pause className="size-4" /> : <Play className="size-4 translate-x-px" />}
         </button>
@@ -86,7 +86,7 @@ export function ForecastTimeline({
             aria-label="Heatmap shows"
             value={metric}
             onChange={(e) => onMetric(e.target.value as Metric)}
-            className="h-8 rounded-md border border-line-strong bg-surface px-1.5 text-xs"
+            className="h-[44px] rounded-md border border-line-strong bg-surface px-2 text-sm"
           >
             {METRICS.map(({ key, label: text }) => (
               <option key={key} value={key}>

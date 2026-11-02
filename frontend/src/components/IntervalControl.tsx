@@ -19,7 +19,7 @@ export function IntervalControl({ value, onChange }: Props) {
             aria-checked={value === n}
             onClick={() => onChange(n)}
             className={cn(
-              'h-7 rounded-[5px] text-sm',
+              'h-[42px] rounded-[5px] text-sm lg:h-7',
               value === n ? 'bg-surface font-medium text-ink-900 shadow-sm ring-1 ring-line-strong' : 'text-ink-500 hover:text-ink-900',
             )}
           >

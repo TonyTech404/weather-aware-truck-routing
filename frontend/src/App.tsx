@@ -1,8 +1,9 @@
-import { useReducer, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import { CheckpointInspector } from '@/components/map/CheckpointInspector'
 import { MapWorkspace } from '@/components/map/MapWorkspace'
 import { MethodologyDialog } from '@/components/MethodologyDialog'
 import { ResultsPanel } from '@/components/ResultsPanel'
+import { SectionNav } from '@/components/SectionNav'
 import { TopBar } from '@/components/TopBar'
 import { TripForm } from '@/components/TripForm'
 import { useAnalysis } from '@/hooks/useAnalysis'
@@ -30,11 +31,14 @@ const initialValues = (): TripFormValues => ({
 
 export default function App() {
   const desktop = useMediaQuery('(min-width: 1024px)')
+  // Phones held sideways are only ~390 px tall: put the planner beside the map there.
+  const sideBySide = useMediaQuery('(min-width: 1024px), (orientation: landscape) and (max-height: 520px)')
   const [values, setValues] = useState<TripFormValues>(initialValues)
   const [fieldsKey, setFieldsKey] = useState(0)
   const [methodologyOpen, setMethodologyOpen] = useState(false)
   const { state, run } = useAnalysis()
   const [ws, dispatch] = useReducer(workspaceReducer, initialWorkspace)
+  const resultsRef = useRef<HTMLDivElement>(null)
 
   // Keep the last successful analysis on screen while a new one loads or fails.
   const [shown, setShown] = useState<AnalysisResponse | null>(null)
@@ -66,6 +70,11 @@ export default function App() {
       />
     ) : null
 
+  // On a phone the results start below the form; bring them into view when a new analysis lands.
+  useEffect(() => {
+    if (shown && !desktop) resultsRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }, [shown, desktop])
+
   function applyPreset(preset: TripPreset) {
     const next: TripFormValues = {
       ...values,
@@ -87,8 +96,12 @@ export default function App() {
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
       <TopBar onOpenMethodology={() => setMethodologyOpen(true)} />
-      <div className="grid min-h-0 flex-1 grid-rows-[38dvh_1fr] lg:grid-cols-[400px_1fr] lg:grid-rows-1">
-        <main className="relative order-1 min-h-0 lg:order-2" aria-label="Map">
+      <div
+        className={`grid min-h-0 flex-1 ${
+          sideBySide ? 'grid-cols-[minmax(320px,400px)_1fr] grid-rows-1' : shown ? 'grid-rows-[54dvh_1fr]' : 'grid-rows-[28dvh_1fr]'
+        }`}
+      >
+        <main className={`relative min-h-0 ${sideBySide ? 'order-2' : 'order-1'}`} aria-label="Map">
           <MapWorkspace
             data={shown}
             ws={ws}
@@ -100,8 +113,13 @@ export default function App() {
             inspectorOnMap={desktop}
           />
         </main>
-        <aside className="order-2 min-h-0 overflow-y-auto border-t border-line bg-canvas lg:order-1 lg:border-t-0 lg:border-r" aria-label="Trip planner">
-          <div className="border-b border-line bg-surface">
+        <aside
+          className={`min-h-0 overflow-y-auto overscroll-contain bg-canvas ${sideBySide ? 'order-1 border-r border-line' : 'order-2 border-t border-line'}`}
+          style={{ paddingBottom: inspector ? '56dvh' : undefined }}
+          aria-label="Trip planner"
+        >
+          {shown && !desktop && <SectionNav />}
+          <div id="sec-trip" className="scroll-mt-14 border-b border-line bg-surface">
             <TripForm
               values={values}
               onChange={setValues}
@@ -112,20 +130,26 @@ export default function App() {
               onSwap={swap}
             />
           </div>
-          <div className="pt-3">
+          <div className="pt-3" ref={resultsRef}>
             <ResultsPanel
               data={shown}
               loading={loading}
               error={error}
               ws={ws}
               dispatch={dispatch}
-              inspector={inspector}
+              inspector={null}
               onRetry={() => lastRequest && retry(lastRequest)}
               onPreset={applyPreset}
             />
           </div>
         </aside>
       </div>
+      {/* Phones: checkpoint details slide up as a sheet so they are never off-screen. */}
+      {inspector && (
+        <div className="fixed inset-x-0 bottom-0 z-40 max-h-[54dvh] overflow-y-auto rounded-t-xl border-t border-line-strong bg-surface p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_rgba(0,0,0,0.18)]">
+          {inspector}
+        </div>
+      )}
       <MethodologyDialog open={methodologyOpen} onClose={() => setMethodologyOpen(false)} />
     </div>
   )

@@ -74,13 +74,13 @@ export function CheckpointInspector({ route, checkpoint: cp, hour, timezone, dep
           <h3 className="text-sm font-semibold">{title}</h3>
         </div>
         <div className="flex items-center gap-0.5">
-          <button type="button" aria-label="Previous checkpoint" disabled={cp.index === 0} onClick={() => onStep(-1)} className="rounded p-1 text-ink-500 hover:bg-canvas disabled:opacity-30">
+          <button type="button" aria-label="Previous checkpoint" disabled={cp.index === 0} onClick={() => onStep(-1)} className="flex size-[40px] items-center justify-center rounded text-ink-500 hover:bg-canvas disabled:opacity-30 lg:size-auto lg:p-1">
             <ChevronLeft className="size-4" />
           </button>
-          <button type="button" aria-label="Next checkpoint" disabled={cp.index === route.checkpoints.length - 1} onClick={() => onStep(1)} className="rounded p-1 text-ink-500 hover:bg-canvas disabled:opacity-30">
+          <button type="button" aria-label="Next checkpoint" disabled={cp.index === route.checkpoints.length - 1} onClick={() => onStep(1)} className="flex size-[40px] items-center justify-center rounded text-ink-500 hover:bg-canvas disabled:opacity-30 lg:size-auto lg:p-1">
             <ChevronRight className="size-4" />
           </button>
-          <button type="button" aria-label="Close checkpoint details" onClick={onClose} className="rounded p-1 text-ink-500 hover:bg-canvas">
+          <button type="button" aria-label="Close checkpoint details" onClick={onClose} className="flex size-[40px] items-center justify-center rounded text-ink-500 hover:bg-canvas lg:size-auto lg:p-1">
             <X className="size-4" />
           </button>
         </div>

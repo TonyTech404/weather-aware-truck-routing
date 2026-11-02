@@ -16,7 +16,7 @@ export function TopBar({ onOpenMethodology }: Props) {
       <button
         type="button"
         onClick={onOpenMethodology}
-        className="flex h-8 items-center gap-1.5 rounded-md border border-line px-2.5 text-sm text-ink-700 hover:bg-canvas"
+        className="flex h-[42px] items-center gap-1.5 rounded-md border border-line px-3 text-sm lg:h-9 text-ink-700 hover:bg-canvas"
       >
         <BookOpenText className="size-4" aria-hidden />
         <span>Methodology</span>

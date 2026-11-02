@@ -61,7 +61,7 @@ export function TripForm({ values, onChange, fieldsKey, serverErrors, loading, o
           type="button"
           onClick={onSwap}
           aria-label="Swap origin and destination"
-          className="absolute top-[34px] right-9 z-10 hidden size-7 items-center justify-center rounded-full border border-line-strong bg-surface text-ink-500 shadow-sm hover:text-ink-900 sm:flex"
+          className="absolute top-[34px] right-9 z-10 hidden size-[40px] items-center justify-center rounded-full lg:size-8 border border-line-strong bg-surface text-ink-500 shadow-sm hover:text-ink-900 sm:flex"
         >
           <ArrowDownUp className="size-3.5" />
         </button>
@@ -79,7 +79,7 @@ export function TripForm({ values, onChange, fieldsKey, serverErrors, loading, o
           max={toLocalInputValue(max)}
           aria-invalid={errors.departure ? true : undefined}
           onChange={(e) => set({ departure: e.target.value })}
-          className={`h-9 w-full rounded-md border bg-surface px-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none ${errors.departure ? 'border-[#d5403f]' : 'border-line-strong'}`}
+          className={`h-[44px] w-full rounded-md border bg-surface px-2.5 text-sm lg:h-9 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none ${errors.departure ? 'border-[#d5403f]' : 'border-line-strong'}`}
         />
         {errors.departure && (
           <p role="alert" className="mt-1 text-xs text-[#a02323]">
@@ -94,7 +94,7 @@ export function TripForm({ values, onChange, fieldsKey, serverErrors, loading, o
       <button
         type="submit"
         disabled={loading}
-        className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-brand-700 text-sm font-medium text-white hover:bg-brand-800 disabled:cursor-wait disabled:opacity-80"
+        className="flex h-[46px] w-full items-center justify-center gap-2 rounded-md bg-brand-700 lg:h-9 text-sm font-medium text-white hover:bg-brand-800 disabled:cursor-wait disabled:opacity-80"
       >
         {loading ? (
           <>

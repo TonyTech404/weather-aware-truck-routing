@@ -51,7 +51,7 @@ export function PlaceField({ label, marker, value, error, onChange }: Props) {
       </label>
       <div
         className={cn(
-          'flex h-9 items-center gap-2 rounded-md border bg-surface pr-1.5 pl-2 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20',
+          'flex h-[44px] items-center gap-2 rounded-md border bg-surface pr-1.5 pl-2 lg:h-9 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20',
           error ? 'border-[#d5403f]' : 'border-line-strong',
         )}
       >
@@ -84,7 +84,7 @@ export function PlaceField({ label, marker, value, error, onChange }: Props) {
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 120)}
           onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-ink-400"
+          className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-ink-400 lg:text-sm"
         />
         {status === 'loading' && <LoaderCircle className="size-4 animate-spin text-ink-400" aria-label="Searching" />}
         {text && (
@@ -96,7 +96,7 @@ export function PlaceField({ label, marker, value, error, onChange }: Props) {
               onChange(null)
               inputRef.current?.focus()
             }}
-            className="rounded p-1 text-ink-400 hover:bg-canvas hover:text-ink-700"
+            className="flex size-[40px] items-center justify-center rounded text-ink-400 hover:bg-canvas hover:text-ink-700 lg:size-7"
           >
             <X className="size-3.5" />
           </button>

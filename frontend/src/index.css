@@ -105,6 +105,25 @@ input[type='range'].plain::-moz-range-thumb {
   font-size: 10px;
 }
 
+/* Touch screens: pinch to zoom instead of +/- buttons, and a thumb that is easy to grab. */
+@media (pointer: coarse) {
+  .maplibregl-ctrl-bottom-right {
+    display: none;
+  }
+  input[type='range'].timeline {
+    height: 14px;
+    border-radius: 7px;
+  }
+  input[type='range'].timeline::-webkit-slider-thumb {
+    height: 32px;
+    width: 32px;
+  }
+  input[type='range'].plain::-webkit-slider-thumb {
+    height: 26px;
+    width: 26px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

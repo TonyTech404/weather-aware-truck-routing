@@ -30,7 +30,7 @@ export function LoadField({ value, error, onChange }: Props) {
       </label>
       <div
         className={cn(
-          'flex h-9 items-center rounded-md border bg-surface px-2.5 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20',
+          'flex h-[44px] items-center rounded-md border bg-surface px-2.5 lg:h-9 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20',
           error ? 'border-[#d5403f]' : 'border-line-strong',
         )}
       >
@@ -42,7 +42,7 @@ export function LoadField({ value, error, onChange }: Props) {
           aria-invalid={error ? true : undefined}
           aria-describedby={`${id}-hint`}
           onChange={(e) => onChange(e.target.value)}
-          className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+          className="h-full min-w-0 flex-1 bg-transparent text-base outline-none lg:text-sm"
         />
         <span className="text-sm text-ink-400">lb</span>
       </div>

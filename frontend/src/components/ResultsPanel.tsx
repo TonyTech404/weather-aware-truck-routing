@@ -59,6 +59,7 @@ function Results({
         {request.origin.label} → {request.destination.label} · {formatPounds(request.load_lb)} · departs{' '}
         {formatClockWithZone(request.departure_utc, request.timezone)}
       </p>
+      <div id="sec-routes" className="scroll-mt-14 space-y-3">
       <RecommendationSummary recommendation={recommendation} routes={routes} />
       {notices.map((note) => (
         <p key={note} role="note" className="flex gap-1.5 rounded-md border border-line bg-surface p-2.5 text-xs text-ink-700">
@@ -79,14 +80,19 @@ function Results({
         </p>
       )}
       {routes.length > 1 && <RouteComparison routes={routes} recommendation={recommendation} />}
-      <RouteDetail route={selected} />
+      </div>
+      <div id="sec-detail" className="scroll-mt-14">
+        <RouteDetail route={selected} />
+      </div>
       {inspector}
+      <div id="sec-checkpoints" className="scroll-mt-14">
       <CheckpointList
         route={selected}
         timezone={request.timezone}
         selectedIndex={ws.checkpoint}
         onSelect={(index) => dispatch({ type: 'selectCheckpoint', index })}
       />
+      </div>
       <p className="pt-1 text-[11px] leading-snug text-ink-400">
         Routing: {meta.routing.provider} ({meta.routing.profile} profile). Forecast: {meta.weather.provider}, {meta.weather.sampling}.
         Vehicle: assumed tractor-trailer, {meta.vehicle_assumptions.tare_lb.toLocaleString('en-US')} lb empty.
