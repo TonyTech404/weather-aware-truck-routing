@@ -22,7 +22,7 @@ class InlineExecutor(Executor):
         future = Future()
         try:
             future.set_result(fn(*args, **kwargs))
-        except BaseException as exc:  # noqa: BLE001 - propagate through the future
+        except BaseException as exc:
             future.set_exception(exc)
         return future
 
